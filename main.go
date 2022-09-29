@@ -1,8 +1,6 @@
 package main
 
-import (
-	"golangCI/util"
-)
+import "golangCI/prepare"
 
 type Operation_System int
 
@@ -17,23 +15,27 @@ var CurrentSystem Operation_System = Default
 var GlobalCommand string
 
 func main() {
-	prepare()
+	prepareOperation()
 
 }
-func prepare() {
-	_, err := util.GetSystemInformation()
+func prepareOperation() {
+	_, err := prepare.GetSystemInformation()
 	if err != nil {
 		panic(err.Error())
 	}
-	err = util.ConvertSystemToCommand()
+	err = prepare.ConvertSystemToCommand()
 	if err != nil {
 		panic(err.Error())
 	}
-	_, err = util.InspectGo()
+	_, err = prepare.InspectGo()
 	if err != nil {
 		panic(err.Error())
 	}
-	_, err = util.InspectGit()
+	_, err = prepare.InspectGit()
+	if err != nil {
+		panic(err.Error())
+	}
+	_, err = prepare.InspectDocker()
 	if err != nil {
 		panic(err.Error())
 	}
