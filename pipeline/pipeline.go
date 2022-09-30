@@ -5,7 +5,6 @@ import (
 	"golangCI/prepare"
 	"log"
 	"os"
-	"os/exec"
 	"sync"
 )
 
@@ -18,7 +17,7 @@ type Parameters struct {
 
 var GlobalParametes Parameters
 
-func GetSSHLocation() (*os.File, error) {
+func (*Parameters) GetSSHLocation() (*os.File, error) {
 	if GlobalParametes.SshLocation == "" {
 		return nil, fmt.Errorf("ssh location is empty")
 	}
@@ -29,13 +28,21 @@ func GetSSHLocation() (*os.File, error) {
 	return open, nil
 }
 
-func GetBranchName() string {
+func (*Parameters) GetBranchName() string {
+	if GlobalParametes.BranchName == "" {
+		return "main"
+	}
 	return GlobalParametes.BranchName
+}
+
+func (*Parameters) GetGitRepository() string {
+
+	return GlobalParametes.GitRepositoy
 }
 
 var once sync.Once
 
-func GetLocationRepository() (string, error) {
+func (*Parameters) GetLocationRepository() (string, error) {
 	var methodError error
 	once.Do(func() {
 		location, err := prepare.GetSystemLocation()
@@ -53,28 +60,27 @@ func GetLocationRepository() (string, error) {
 	return GlobalParametes.GitLocationRepo, methodError
 }
 func PullRepository(location string) error {
-	file,err:=os.Open(location)
-	stat, err := file.Stat()
-	if err != nil {
-		return err
+	_, err := os.Stat(location)
+	if os.IsNotExist(err) {
+		err = os.Mkdir(location, 0755)
+		if err != nil {
+			return fmt.Errorf("create dir error:%s", err.Error())
+		}
 	}
-	stat.IsDir()
-	if ;
-	err := exec.Command(prepare.GlobalCommand, prepare.GlobalParams, "cd ", location).Run()
-	if err != nil {
-		return fmt.Errorf("cd the locationRepository error:%s", err.Error())
-	}
-	output, err := exec.Command(prepare.GlobalCommand, prepare.GlobalCommand, "git init").Output()
+
+	output, err := CreateWorkCMD(location, prepare.GlobalCommand, "git init").Output()
+
 	if err != nil {
 		return fmt.Errorf("init git repository error:%s", err.Error())
 	}
+
 	log.Printf("%s init git repository success:%s", location, output)
-	_, err = exec.Command(prepare.GlobalCommand, prepare.GlobalCommand, "git remote add origin ", GlobalParametes.GitRepositoy).Output()
+	_, err = CreatePreCMD(fmt.Sprintf("git remote add origin %s", GlobalParametes.GetGitRepository())).Output()
 	if err != nil {
 		return fmt.Errorf("git remote add origin error:%s", err.Error())
 	}
 	log.Printf("%s git remote add origin repository success", location)
-	_, err = exec.Command(prepare.GlobalCommand, prepare.GlobalCommand, "git pull origin", GlobalParametes.BranchName).Output()
+	_, err = CreatePreCMD(fmt.Sprintf("git pull  origin   %s", GlobalParametes.GetBranchName())).Output()
 	if err != nil {
 		return fmt.Errorf("git pull remote repository error:%s", err.Error())
 	}

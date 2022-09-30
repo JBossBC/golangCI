@@ -101,7 +101,7 @@ func GetSystemLocation() (string, error) {
 		return "/usr/", nil
 	}
 	if CurrentSystem == WINDOWS {
-		return "/var/", nil
+		return "C://var/", nil
 	}
 	return "", fmt.Errorf("programming occur panic error")
 }
