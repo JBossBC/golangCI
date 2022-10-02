@@ -16,7 +16,7 @@ func TestPullRepository(t *testing.T) {
 	if err != nil {
 		panic(err.Error())
 	}
-	GlobalParametes.GitRepositoy = ""
+	GlobalParametes.GitRepositoy = "git@github.com:JBossBC/golangCI.git"
 	err = PullRepository("C://var/CI")
 	if err != nil {
 		return
@@ -24,10 +24,11 @@ func TestPullRepository(t *testing.T) {
 }
 
 func TestCMD(t *testing.T) {
-	output, err := exec.Command("cmd ", "cd C://var/CI", " git init").Output()
+
+	cmd := exec.Command("cmd", "/c", "git init")
+	cmd.Dir = "C:/var/CI"
+	err := cmd.Run()
 	if err != nil {
 		fmt.Println(err.Error())
-		return
 	}
-	fmt.Println(string(output))
 }

@@ -9,10 +9,12 @@
 
 pipeline{
       parameters:{
-          git repository:""(should be ssh link),
-          git key location:"absolutely location",
-          branch name:default(main)
+          repository:""(should be ssh link),
+          ssh:"absolutely location",
+          branch:default(main)
+          dockerfileName:
 }
+
 
 
 `}

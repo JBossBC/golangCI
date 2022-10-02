@@ -1,6 +1,11 @@
 package main
 
-import "golangCI/prepare"
+import (
+	"golangCI/deploy"
+	"golangCI/pipeline"
+	"golangCI/prepare"
+	"log"
+)
 
 type Operation_System int
 
@@ -15,7 +20,13 @@ var CurrentSystem Operation_System = Default
 var GlobalCommand string
 
 func main() {
+	err := pipeline.Analy()
+	if err != nil {
+		log.Fatal(err.Error())
+		return
+	}
 	prepareOperation()
+	deploy.ContinuousDeploy()
 
 }
 func prepareOperation() {

@@ -1,0 +1,8 @@
+{
+  "parameters": {
+    "gitRepository":"git@github.com:JBossBC/blog.git",
+    "dockerfileName":"blog.dockerfile",
+    "branchName": "main",
+    "gitLocationRepo": "/var/CI"
+  }
+}
