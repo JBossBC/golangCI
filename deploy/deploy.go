@@ -1,6 +1,7 @@
 package deploy
 
 import (
+	"encoding/json"
 	"fmt"
 	"golangCI/pipeline"
 	"golangCI/prepare"
@@ -9,6 +10,8 @@ import (
 	"strings"
 	"time"
 )
+
+var preImages = make(map[string]int, 100)
 
 func Deploy(contextPath string) error {
 	log.Println("begin deploy...")
@@ -30,6 +33,7 @@ func Deploy(contextPath string) error {
 		return fmt.Errorf("cant find the image %s", images)
 	}
 	var imageHash = info[locationInfo]
+	preImages[imageHash]++
 	var globalErr error
 	go func() {
 		_, err = util.CreatePreCMD(fmt.Sprintf("docker run -p 8081:8081  %s", imageHash)).Output()
@@ -55,7 +59,59 @@ func ContinuousDeploy() {
 		if err != nil {
 			panic(err.Error())
 		}
+		containerRm()
 
 		time.Sleep(time.Second * 60)
+	}
+}
+
+var containerSet []*ContainerInfo
+
+type ContainerInfo struct {
+	Command   string `json:Command`
+	CreatedAt string `json:CreatedAt`
+	ID        string `json:ID`
+	Image     string `json:Image`
+	Names     string `json:Names`
+	Ports     string `json:Ports`
+	Status    string `json:Status`
+	State     string `json:State`
+	Networks  string `json:Network`
+}
+
+func containerRm() {
+	repository := pipeline.GlobalParametes.GitLocationRepo
+	var lsContainers = fmt.Sprintf(`docker container ls -a --format "{{json .}}"`)
+	containers, err := util.CreateWorkCMD(repository, prepare.GlobalCommand, lsContainers).Output()
+	if err != nil {
+		log.Fatalf("docker container ls error:%s", lsContainers)
+		return
+	}
+	err = json.Unmarshal(containers, &containerSet)
+	if err != nil {
+		log.Fatalf("json analy error:%s", err.Error())
+		return
+	}
+	for i := 0; i < len(containerSet); i++ {
+		var temp = containerSet[i]
+		if data, ok := preImages[temp.Image]; ok && data != 0 {
+			if temp.State != "running" {
+				var rmContaienr = fmt.Sprintf("docker container rm %s", temp.ID)
+				_, err := util.CreatePreCMD(rmContaienr).Output()
+				if err != nil {
+					log.Printf("remove docker container %s error:%s", temp.ID, err.Error())
+					return
+				}
+				preImages[temp.Image]--
+				if preImages[temp.Image] <= 0 {
+					var rmImage = fmt.Sprintf("docker image rm %s", temp.Image)
+					_, err := util.CreatePreCMD(rmImage).Output()
+					if err != nil {
+						log.Printf("remove docker image %s error:%s", temp.Image, err.Error())
+						return
+					}
+				}
+			}
+		}
 	}
 }
